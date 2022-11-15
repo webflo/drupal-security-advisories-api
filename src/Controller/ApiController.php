@@ -36,22 +36,11 @@ class ApiController extends AbstractController {
 
     #[Route('/api/security-advisories/', name: 'security-advisories-get', methods: ['GET'])]
     public function saGet(Request $request): JsonResponse {
-        $packages = $request->request->all('packages');
+        $packages = $request->query->all('packages');
         if (!is_array($packages)) {
             throw new BadRequestException();
         }
-        $projectDir = $this->getParameter('kernel.project_dir');
-        $composerJson = json_decode(file_get_contents($projectDir . '/var/repo/composer.json'), TRUE);
-
-        $advisories = array_intersect_key($composerJson['conflict'], array_combine($packages, $packages));
-        $response = [];
-        foreach ($advisories as $packageName => $affectedVersions) {
-            $response['advisories'][$packageName] = [
-                'packageName' => $packageName,
-                'affectedVersions' => $affectedVersions,
-            ];
-        }
-        return new JsonResponse($response);
+        return $this->handleSa($packages);
     }
 
     #[Route('/api/security-advisories/', name: 'security-advisories-post', methods: ['POST'])]
