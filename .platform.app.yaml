@@ -1,0 +1,52 @@
+# This file describes an application. You can have multiple applications
+# in the same project.
+
+# The name of this app. Must be unique within a project.
+name: app
+
+# The type of the application to build.
+type: 'php:8.1'
+
+# Indicate that we want to use composer2, (leave out if you want composer1)
+dependencies:
+    php:
+        composer/composer: '^2'
+
+# The hooks that will be performed when the package is deployed.
+hooks:
+    build: |
+        set -e
+
+    deploy: |
+        set -e
+        ./bin/console app:download-security-advisories
+
+# The size of the persistent disk of the application (in MB).
+disk: 2048
+
+# The mounts that will be performed when the package is deployed.
+mounts:
+    "/var":
+        source: local
+        source_path: var
+
+# The configuration of app when it is exposed to the web.
+web:
+    locations:
+        "/":
+            # The public directory of the app, relative to its root.
+            root: "public"
+            # The front-controller script to send non-static requests to.
+            passthru: "/index.php"
+
+source:
+    operations:
+        auto-update:
+            command: |
+                curl -fsS https://raw.githubusercontent.com/platformsh/source-operations/main/setup.sh | { bash /dev/fd/3 sop-autoupdate; } 3<&0
+
+crons:
+    download-security-advisories:
+        spec: '*/30 * * * *'
+        commands:
+            start: './bin/console app:download-security-advisories'
